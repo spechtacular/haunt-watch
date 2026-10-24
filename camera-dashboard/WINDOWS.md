@@ -47,8 +47,8 @@ Open **http://127.0.0.1:8088**. The banner must say **TEST VIDEO MODE**. There s
 Check:
 
 - All four feeds move and show **TEST VIDEO** after connecting.
-- Click a tile: its inspector starts in HD (640 x 360).
-- Switch to SD (320 x 180), then back to HD; video continues.
+- Click a tile: its inspector starts in SD (320 x 180).
+- Switch to HD (640 x 360), then back to SD; video continues.
 - Close the inspector and try pause/resume and reconnect.
 - Enter fullscreen and leave with Escape.
 - Leave it running for several minutes; patterns loop every three seconds.

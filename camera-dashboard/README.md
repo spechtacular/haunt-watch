@@ -2,7 +2,7 @@
 
 A local browser dashboard for macOS, Linux, and Windows 11. Uses Node.js and go2rtc, with no npm packages or cloud services required. The included 23 cameras follow the latest room/IP map in `camera-scan.sh`.
 
-The wall starts with muted substreams, supports 1–6 cameras per page with automatic tile sizing, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the main-stream inspector; switch between SD and HD there. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
+The wall starts with muted substreams, supports 1–6 cameras per page with automatic tile sizing, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the inspector, which also starts with the SD substream; switch to HD there when needed. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
 
 ## Install from GitHub
 
@@ -18,6 +18,20 @@ cd haunt-watch/camera-dashboard
 Install [Node.js LTS](https://nodejs.org/) (22.9 or newer, with npm) first. No `npm install` is needed. All remaining commands run inside `camera-dashboard`; do not run another `cd camera-dashboard` if you are already there. In Windows PowerShell, use `npm.cmd` instead of `npm`.
 
 Start the app in the terminal, keep that terminal running, and browse to **http://127.0.0.1:8088**. Opening `public/index.html` directly as a `file://` page does not run the server. Stop with **Ctrl+C** before switching modes.
+
+## Custom camera groups / pages
+
+1. Click **New page** above the wall.
+2. Enter a name, such as **Ship**, **Entrance**, or **Backstage**.
+3. Select **1–6 cameras** using the checkboxes. Search by room name or IP to find cameras; selections are kept when you change the search. Once six are selected, uncheck one before adding another.
+4. Click **Save page**. Only those assigned cameras appear, with tiles sized for their count.
+5. Choose a page from **Camera page**, or use the bottom page selector and arrows to switch between saved pages.
+
+Use **Edit page** to rename a page or change its cameras. To move a camera between groups, remove it from one page and add it to the other. A camera may also appear on multiple pages. Drag the handles to arrange cameras inside the selected page; each custom page keeps its own order. **Reset page order** sorts that page by room without changing its membership.
+
+To delete a page, choose **Edit page → Delete page → Yes, delete page**. This removes only the group, never the cameras. Choose **All cameras · automatic pages** to return to the full inventory and the 1–6 automatic page-size control.
+
+Named pages, camera selections, ordering, and the last selected group are saved in this browser for this dashboard address. They survive refreshes and application restarts, but do not sync between browsers, addresses, or computers. Clearing site data removes these preferences. The generated test-video mode has separate groups from the actual camera wall.
 
 ## Arrange the camera wall
 
