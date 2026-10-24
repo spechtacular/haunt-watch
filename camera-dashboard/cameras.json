@@ -1,0 +1,186 @@
+[
+  {
+    "id": "camera_29",
+    "room": "00",
+    "name": "Entrance",
+    "ip": "10.168.20.29",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_24",
+    "room": "01",
+    "name": "Bayou",
+    "ip": "10.168.20.24",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_25",
+    "room": "01",
+    "name": "Bayou",
+    "ip": "10.168.20.25",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_11",
+    "room": "02",
+    "name": "CrossedMen",
+    "ip": "10.168.20.11",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_104",
+    "room": "04",
+    "name": "ElevatorExit",
+    "ip": "10.168.20.104",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_26",
+    "room": "05",
+    "name": "PriceOfPassage",
+    "ip": "10.168.20.26",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_21",
+    "room": "06",
+    "name": "Tavern",
+    "ip": "10.168.20.21",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_41",
+    "room": "07",
+    "name": "Bilge(Knockers)",
+    "ip": "10.168.20.41",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_14",
+    "room": "08",
+    "name": "Barrel",
+    "ip": "10.168.20.14",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_16",
+    "room": "09",
+    "name": "CaptainQ",
+    "ip": "10.168.20.16",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_102",
+    "room": "10",
+    "name": "Curio",
+    "ip": "10.168.20.102",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_36",
+    "room": "12",
+    "name": "ShipDeck",
+    "ip": "10.168.20.36",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_33",
+    "room": "13",
+    "name": "UnderH2O",
+    "ip": "10.168.20.33",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_22",
+    "room": "14",
+    "name": "Sirens(Bungee)",
+    "ip": "10.168.20.22",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_15",
+    "room": "15",
+    "name": "FogWall",
+    "ip": "10.168.20.15",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_18",
+    "room": "17",
+    "name": "Dungeon",
+    "ip": "10.168.20.18",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_28",
+    "room": "17",
+    "name": "Dungeon",
+    "ip": "10.168.20.28",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_23",
+    "room": "18",
+    "name": "Muriel",
+    "ip": "10.168.20.23",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_40",
+    "room": "18",
+    "name": "Muriel",
+    "ip": "10.168.20.40",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_20",
+    "room": "19",
+    "name": "Plank(Whisper Hall)",
+    "ip": "10.168.20.20",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_34",
+    "room": "20",
+    "name": "Still",
+    "ip": "10.168.20.34",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_27",
+    "room": "21",
+    "name": "Exit",
+    "ip": "10.168.20.27",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
+    "id": "camera_17",
+    "room": "22",
+    "name": "Makeup : Backstage",
+    "ip": "10.168.20.17",
+    "brand": "amcrest",
+    "enabled": true
+  }
+]
