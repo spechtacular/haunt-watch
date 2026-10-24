@@ -2,7 +2,7 @@
 
 A local browser dashboard for macOS, Linux, and Windows 11. Uses Node.js and go2rtc, with no npm packages or cloud services required. The included 23 cameras follow the latest room/IP map in `camera-scan.sh`.
 
-The wall starts with muted substreams, supports 4/9/16/all-camera layouts, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the main-stream inspector; switch between SD and HD there. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
+The wall starts with muted substreams, supports 1–6 cameras per page with automatic tile sizing, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the main-stream inspector; switch between SD and HD there. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
 
 ## Install from GitHub
 
@@ -21,7 +21,9 @@ Start the app in the terminal, keep that terminal running, and browse to **http:
 
 ## Arrange the camera wall
 
-Drag the ⠿ handle in a camera's header onto another tile to move it. The feeds keep playing while you rearrange them. To move cameras between pages, choose **All** first. You can also focus a handle with Tab and use the arrow keys to move that camera before or after another visible camera.
+Drag the ⠿ handle in a camera's header onto another tile to move it. The feeds keep playing while you rearrange them. Choose **1–6 cameras per page** and use the page selector or arrow buttons to browse. Dragging rearranges cameras on the current page. You can also focus a handle with Tab and use the arrow keys to move that camera before or after another visible camera.
+
+The page size is saved in the current browser and defaults to six. Pages never contain more than six cameras. Tiles resize for the number actually on the page, including the final partial page. Desktop pages share the available window height; fullscreen gives video more space. Narrow screens use fewer columns.
 
 The order is saved in the current browser for this dashboard address and survives refreshes. Other browsers and computers keep their own layout. **Reset room order** restores the configured room/name order. The generated test-video layout is saved separately from the real camera wall.
 
@@ -130,7 +132,7 @@ This HTTP mode is intended for a trusted LAN. Use an HTTPS reverse proxy or VPN 
 - **Offline:** confirm the IP, manufacturer, credentials, and RTSP port. HTTP port 80 being open does not establish RTSP availability.
 - **SD works but HD fails:** set the camera's main stream to H.264, then retry. An unsupported H.265 stream is not automatically transcoded.
 - **Connecting but no video:** confirm the selected stream is enabled and H.264. Offline detection waits about 15 seconds without video progress, then reconnects.
-- **Too many feeds for a device:** use 4 or 9 tiles per page. `All` opens every camera at once; browser decoding capacity and bandwidth vary.
+- **Too many feeds for a device:** choose fewer cameras per page (1–6). Browser decoding capacity and bandwidth vary.
 - **Port occupied:** change `PORT` or `GO2RTC_PORT` in `.env`.
 - **Safari:** use a current version. Video is muted for autoplay; if playback is blocked, allow autoplay for the dashboard in Safari's website settings.
 
