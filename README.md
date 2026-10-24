@@ -4,7 +4,7 @@ A local camera wall and camera inventory scanner for The Haunt in Atascadero.
 
 ## Camera dashboard
 
-Runs on macOS and Linux with Node.js 22.9 or newer and go2rtc.
+Runs on macOS, Linux, and Windows 11 with Node.js 22.9 or newer and go2rtc.
 
 ```bash
 cd camera-dashboard
@@ -35,3 +35,7 @@ npm test
 ```
 
 Live camera playback requires access to the camera subnet. The room map is site-specific and camera manufacturers should be reviewed before live use.
+
+## Windows 11 and home testing
+
+See [the Windows 11 guide](camera-dashboard/WINDOWS.md) to install the app and verify moving test video without the camera subnet. The dashboard supports Windows; the Bash scanner is still separate.
