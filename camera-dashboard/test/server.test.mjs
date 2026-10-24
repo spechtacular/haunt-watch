@@ -4,9 +4,9 @@ import { spawn } from 'node:child_process';
 import net from 'node:net';
 import http from 'node:http';
 import { existsSync } from 'node:fs';
-import { chmod } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { streamerPlatform } from '../platform.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 async function freePort() {
@@ -25,7 +25,7 @@ async function start(extra = {}, args = []) {
     env: { ...process.env, CAMERA_PASSWORD: 'test-password-never-expose',
       CAMERA_USERNAME: 'admin', HOST: '127.0.0.1', PORT: String(port), GO2RTC_PORT: String(upstreamPort),
       GO2RTC_BIN: join(root, 'fixtures/fake-streamer.mjs'), DASHBOARD_PASSWORD: '', ...extra },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   let logs = '';
   await new Promise((done, reject) => {
@@ -36,14 +36,16 @@ async function start(extra = {}, args = []) {
   });
   return { child, port, url: `http://127.0.0.1:${port}`, logs,
     async close() {
-      if (child.exitCode !== null) return;
-      child.kill('SIGTERM');
-      await new Promise(done => child.once('exit', done));
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      await new Promise(done => {
+        const timer = setTimeout(() => child.kill(), 5000);
+        child.once('exit', () => { clearTimeout(timer); done(); });
+        child.send('shutdown');
+      });
     } };
 }
 
 test('live HTTP and WebSocket proxy expose only configured streams and no credentials', async () => {
-  await chmod(join(root, 'fixtures/fake-streamer.mjs'), 0o755);
   const app = await start();
   try {
     const response = await fetch(app.url + '/api/cameras');
@@ -93,14 +95,48 @@ test('dashboard authentication works and secrets are never served as assets', as
   } finally { await app.close(); }
 });
 
-test('installed go2rtc accepts generated config and serves its browser player', { skip: !existsSync(join(root, 'bin/go2rtc')) }, async () => {
-  const app = await start({ GO2RTC_BIN: join(root, 'bin/go2rtc') });
+const realBinary = join(root, 'bin', streamerPlatform().executable);
+test('installed go2rtc accepts generated config and serves its browser player', { skip: !existsSync(realBinary) }, async () => {
+  const app = await start({ GO2RTC_BIN: realBinary });
   try {
     const response = await fetch(app.url + '/stream/video-rtc.js');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /export class VideoRTC/);
     const body = await (await fetch(app.url + '/api/cameras')).json();
     assert.equal(body.streamerReady, true);
+  } finally { await app.close(); }
+});
+
+test('synthetic SD and HD video travel through the real go2rtc WebSocket proxy', { skip: !existsSync(realBinary), timeout: 30000 }, async () => {
+  const app = await start({ GO2RTC_BIN: realBinary, CAMERA_PASSWORD: '', AMCREST_PASSWORD: '' }, ['--test-video']);
+  try {
+    const body = await (await fetch(app.url + '/api/cameras')).json();
+    assert.equal(body.testVideo, true);
+    assert.equal(body.cameras.length, 4);
+    assert.ok(body.cameras.every(camera => camera.ip === '127.0.0.1'));
+    for (const quality of ['sub', 'main']) {
+      const ws = new WebSocket(`ws://127.0.0.1:${app.port}/stream/api/ws?src=test_1_${quality}`);
+      ws.binaryType = 'arraybuffer';
+      try {
+        const bytes = await new Promise((done, reject) => {
+          let bytes = 0;
+          let packets = 0;
+          const timer = setTimeout(() => reject(new Error(`No ${quality} video data received`)), 10000);
+          ws.onopen = () => ws.send(JSON.stringify({ type: 'mse', value: 'avc1.640029,avc1.64002A,avc1.640033' }));
+          ws.onerror = () => { clearTimeout(timer); reject(new Error('Video WebSocket failed')); };
+          ws.onmessage = event => {
+            if (typeof event.data === 'string') {
+              const message = JSON.parse(event.data);
+              if (message.type === 'error') { clearTimeout(timer); reject(new Error(message.value)); }
+            } else {
+              bytes += event.data.byteLength;
+              if (++packets >= 3) { clearTimeout(timer); done(bytes); }
+            }
+          };
+        });
+        assert.ok(bytes > 1000, 'Received actual H.264 media fragments');
+      } finally { ws.close(); }
+    }
   } finally { await app.close(); }
 });
 
