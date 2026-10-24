@@ -160,7 +160,8 @@ try {
     const cameraPassword = process.env.CAMERA_PASSWORD || process.env.AMCREST_PASSWORD;
     if (!testVideo && !cameraPassword) throw new Error('Set CAMERA_PASSWORD in .env, or use npm run demo for a camera-free preview.');
     const binary = process.env.GO2RTC_BIN || join(root, 'bin', streamerPlatform().executable);
-    await access(binary, constants.X_OK).catch(() => { throw new Error('Install go2rtc with npm run install:streamer first.'); });
+    const accessMode = /\.(?:mjs|js)$/i.test(binary) ? constants.R_OK : constants.X_OK;
+    await access(binary, accessMode).catch(() => { throw new Error('Install go2rtc with npm run install:streamer first.'); });
     // Check the port before launching; never attach to someone else's go2rtc.
     const probe = http.createServer();
     await new Promise((done, reject) => { probe.once('error', reject); probe.listen(upstreamPort, '127.0.0.1', done); });
