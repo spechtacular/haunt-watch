@@ -1,16 +1,28 @@
 name: Test
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   dashboard:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - run: npm test
+          package-manager-cache: false
+      - name: Install platform streamer
+        run: npm run install:streamer
         working-directory: camera-dashboard
-      - run: bash -n camera-scan.sh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Run application and real video integration tests
+        run: npm test
+        working-directory: camera-dashboard
+      - name: Check Bash scanner syntax
+        if: runner.os != 'Windows'
+        run: bash -n camera-scan.sh
