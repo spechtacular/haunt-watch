@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Haunt · Camera Wall</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Haunt Camera Wall home"><span class="brand-mark">H<span>·</span></span><span>THE HAUNT<small>IN ATASCADERO</small></span></a>
+    <div class="workspace"><span class="workspace-icon">◈</span><div>Operations<small>Camera monitoring</small></div><span class="workspace-dot"></span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <button class="nav-button active" id="wall-nav"><span>▦</span> Camera wall <span class="nav-count" id="nav-count">—</span></button>
+    <div class="room-heading"><span class="nav-label">CAMERA DIRECTORY</span><span id="directory-count">—</span></div>
+    <nav id="directory" aria-label="Camera directory"></nav>
+    <footer class="sidebar-footer"><span class="platform-icon">⌘</span><div>One wall. Every room.<small>macOS + Linux</small></div><span class="footer-dot"></span></footer>
+  </aside>
+  <main>
+    <header class="topbar"><div class="breadcrumb">Operations <span>/</span> <strong>Camera wall</strong></div><div class="topbar-right"><span id="clock"></span><span class="operator">OP</span></div></header>
+    <section class="page-heading"><div><div class="eyebrow">THE HAUNT IN ATASCADERO</div><h1>Eyes on every room<span>.</span></h1><p>Your entire walkthrough, in one place.</p></div><button id="fullscreen" class="button secondary"><span>⛶</span> Full screen</button></section>
+    <section class="summary" aria-label="Camera overview">
+      <div class="summary-item"><span class="summary-label">CONFIGURED CAMERAS</span><div><strong id="total-count">—</strong><span>Across the haunt</span></div></div>
+      <div class="summary-item"><span class="summary-label"><i class="dot green"></i>LIVE ON THIS WALL</span><div><strong id="live-count">0</strong><span id="live-description">Waiting for video</span></div></div>
+      <div class="summary-item"><span class="summary-label"><i class="dot amber"></i>NEEDS ATTENTION</span><div><strong id="offline-count">0</strong><span>Last observed failures</span></div></div>
+      <div class="summary-item stream-summary"><span class="summary-label">GRID STREAM</span><div><strong>SD</strong><span>Substream · muted</span></div></div>
+    </section>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <section class="wall-toolbar" aria-label="Wall controls">
+      <div class="filters" role="group" aria-label="Filter cameras"><button data-filter="all" class="selected">All cameras <span id="all-badge">—</span></button><button data-filter="offline">Needs attention <span id="attention-badge">0</span></button></div>
+      <div class="toolbar-actions"><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Find a room or IP…" aria-label="Find a room or IP"></label><label class="layout"><span class="sr-only">Cameras per page</span><select id="layout"><option value="4">2 × 2</option><option value="9" selected>3 × 3</option><option value="16">4 × 4</option><option value="all">All</option></select></label><button id="pause" class="icon-button" title="Pause all video" aria-label="Pause all video">Ⅱ</button><button id="reconnect" class="icon-button" title="Reconnect visible cameras" aria-label="Reconnect visible cameras">↻</button></div>
+    </section>
+    <section id="grid" class="camera-grid" aria-label="Camera video grid" aria-live="off"></section>
+    <div id="empty" class="empty" hidden><span>⌕</span><h2>No cameras found</h2><p>Try another room name or IP address.</p><button class="button secondary" id="clear-search">Clear filters</button></div>
+    <footer class="wall-footer"><span id="page-label">Loading cameras…</span><div class="pagination"><button id="previous" class="icon-button" aria-label="Previous page">←</button><span id="page-count">1 / 1</span><button id="next" class="icon-button" aria-label="Next page">→</button></div><span class="footer-tip">Click a feed to inspect <kbd>ESC</kbd> to close</span></footer>
+  </main>
+  <dialog id="focus-dialog"><div class="focus-heading"><div><span class="eyebrow">CAMERA INSPECTOR</span><h2 id="focus-title"></h2><p id="focus-ip"></p></div><div class="focus-actions"><label class="layout"><span class="sr-only">Video quality</span><select id="quality"><option value="sub">SD · Substream</option><option value="main" selected>HD · Main stream</option></select></label><button id="close-focus" class="icon-button" aria-label="Close inspector">×</button></div></div><div id="focus-feed" class="focus-feed"></div><div class="focus-footer"><span id="focus-status">Connecting…</span><span>H.264 recommended · video only</span></div></dialog>
+</body>
+</html>
