@@ -54,6 +54,7 @@ const tunnels = new Set();
 const assets = new Map([
   ['/', ['index.html', 'text/html']],
   ['/app.js', ['app.js', 'text/javascript']],
+  ['/order.js', ['order.js', 'text/javascript']],
   ['/style.css', ['style.css', 'text/css']],
   ['/favicon.svg', ['favicon.svg', 'image/svg+xml']],
 ]);

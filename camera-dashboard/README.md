@@ -4,6 +4,12 @@ A local browser dashboard for macOS, Linux, and Windows 11. Uses Node.js and go2
 
 The wall starts with muted substreams, supports 4/9/16/all-camera layouts, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the main-stream inspector; switch between SD and HD there. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
 
+## Arrange the camera wall
+
+Drag the ⠿ handle in a camera's header onto another tile to move it. The feeds keep playing while you rearrange them. To move cameras between pages, choose **All** first. You can also focus a handle with Tab and use the arrow keys to move that camera before or after another visible camera.
+
+The order is saved in the current browser for this dashboard address and survives refreshes. Other browsers and computers keep their own layout. **Reset room order** restores the configured room/name order. The generated test-video layout is saved separately from the real camera wall.
+
 ## Requirements
 
 - Node.js **22.9 or newer**, including npm, on macOS, Linux, or Windows 11 (x64 or ARM64).
