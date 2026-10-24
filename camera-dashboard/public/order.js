@@ -20,3 +20,15 @@ export function moveCamera(cameras, sourceId, targetId) {
   result.splice(target, 0, ...result.splice(source, 1));
   return result;
 }
+
+export function pageSize(value) {
+  const count = Number(value);
+  return Number.isInteger(count) && count >= 1 && count <= 6 ? count : 6;
+}
+
+export function cameraPage(cameras, requestedPage, requestedSize) {
+  const size = pageSize(requestedSize);
+  const pages = Math.max(1, Math.ceil(cameras.length / size));
+  const page = Math.max(0, Math.min(Number.isInteger(requestedPage) ? requestedPage : 0, pages - 1));
+  return { size, pages, page, visible: cameras.slice(page * size, (page + 1) * size) };
+}

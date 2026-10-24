@@ -1,9 +1,8 @@
-import { restoreOrder, moveCamera } from './order.js';
+import { restoreOrder, moveCamera, pageSize, cameraPage } from './order.js';
 
 const $ = selector => document.querySelector(selector);
-const state = { cameras: [], demo: true, testVideo: false, page: 0, size: '9', query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
-try { state.size = localStorage.getItem('haunt-grid') || '9'; } catch { /* Storage can be unavailable in private windows. */ }
-if (!['4', '9', '16', 'all'].includes(state.size)) state.size = '9';
+const state = { cameras: [], demo: true, testVideo: false, page: 0, size: 6, query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
+try { state.size = pageSize(localStorage.getItem('haunt-grid')); } catch { /* Storage can be unavailable in private windows. */ }
 $('#layout').value = state.size;
 let VideoClass;
 let defaultCameras = [];
@@ -178,12 +177,13 @@ function filtered() {
 function renderGrid() {
   stopGrid();
   const matches = filtered();
-  const count = state.size === 'all' ? Math.max(matches.length, 1) : Number(state.size);
-  const pages = Math.max(1, Math.ceil(matches.length / count));
-  state.page = Math.max(0, Math.min(state.page, pages - 1));
-  const visible = matches.slice(state.page * count, (state.page + 1) * count);
+  const { size: count, pages, page, visible } = cameraPage(matches, state.page, state.size);
+  state.page = page;
   $('#grid').replaceChildren();
-  $('#grid').style.gridTemplateColumns = `repeat(${state.size === '4' ? 2 : state.size === '16' || state.size === 'all' ? 4 : 3},minmax(0,1fr))`;
+  const columns = visible.length <= 3 ? Math.max(1, visible.length) : visible.length === 4 ? 2 : 3;
+  $('#grid').style.setProperty('--columns', columns);
+  $('#grid').style.setProperty('--tablet-columns', Math.min(columns, 2));
+  $('#grid').dataset.count = visible.length;
   for (const camera of visible) {
     const card = document.createElement('article');
     card.className = 'camera-card';
@@ -243,6 +243,14 @@ function renderGrid() {
   $('#empty').hidden = visible.length > 0;
   $('#page-label').textContent = matches.length ? `Showing ${state.page * count + 1}–${state.page * count + visible.length} of ${matches.length} cameras` : '0 cameras match your filters';
   $('#page-count').textContent = `${state.page + 1} / ${pages}`;
+  $('#page-select').replaceChildren(...Array.from({ length: pages }, (_, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = `Page ${index + 1} of ${pages}`;
+    return option;
+  }));
+  $('#page-select').value = state.page;
+  $('#page-select').disabled = !matches.length;
   $('#previous').disabled = state.page === 0;
   $('#next').disabled = state.page >= pages - 1;
   updateCounts();
@@ -286,13 +294,14 @@ document.querySelectorAll('[data-filter]').forEach(button => button.addEventList
   renderGrid();
 }));
 $('#layout').addEventListener('change', event => {
-  state.size = event.target.value;
+  state.size = pageSize(event.target.value);
   state.page = 0;
   try { localStorage.setItem('haunt-grid', state.size); } catch { /* Optional preference. */ }
   renderGrid();
 });
 $('#previous').addEventListener('click', () => { state.page--; renderGrid(); });
 $('#next').addEventListener('click', () => { state.page++; renderGrid(); });
+$('#page-select').addEventListener('change', event => { state.page = Number(event.target.value); renderGrid(); });
 $('#reconnect').addEventListener('click', () => { renderGrid(); refreshFocus(); });
 $('#pause').addEventListener('click', () => {
   state.paused = !state.paused;
