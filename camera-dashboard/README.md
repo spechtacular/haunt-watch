@@ -72,7 +72,7 @@ On Windows, copy the example with `Copy-Item .env.example .env` and edit it with
 
 Quote passwords containing `#` so Node's environment-file parser preserves them. Existing exported `AMCREST_USERNAME`/`AMCREST_PASSWORD` variables are accepted as fallbacks. Do not put passwords in `cameras.json`.
 
-Review `cameras.json`: the supplied room list did not identify manufacturers, so entries initially use `"brand": "amcrest"`. Change each Reolink entry to `"brand": "reolink"`. These are configured addresses, not a fresh network scan. Placeholder `.xxx` addresses are omitted.
+Review `cameras.json`: Entrance (`10.168.20.29`) and Exit (`10.168.20.27`) use `"brand": "reolink"`; the other supplied entries use `"brand": "amcrest"`. Confirm the brand for each camera. If you already created `cameras.local.json`, update these two entries there as well; replacing the default file does not update your private copy. These are configured addresses, not a fresh network scan. Placeholder `.xxx` addresses are omitted.
 
 Then start:
 
@@ -94,7 +94,7 @@ To create the private copy, use `cp cameras.json cameras.local.json` on macOS/Li
   "room": "00",
   "name": "Entrance",
   "ip": "10.168.20.29",
-  "brand": "amcrest",
+  "brand": "reolink",
   "enabled": true
 }
 ```

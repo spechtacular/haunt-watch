@@ -4,7 +4,7 @@
     "room": "00",
     "name": "Entrance",
     "ip": "10.168.20.29",
-    "brand": "amcrest",
+    "brand": "reolink",
     "enabled": true
   },
   {
@@ -172,7 +172,7 @@
     "room": "21",
     "name": "Exit",
     "ip": "10.168.20.27",
-    "brand": "amcrest",
+    "brand": "reolink",
     "enabled": true
   },
   {

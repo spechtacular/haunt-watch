@@ -63,7 +63,7 @@ Copy-Item .env.example .env
 notepad .env
 ```
 
-Set `CAMERA_USERNAME` and `CAMERA_PASSWORD`. Review `cameras.json`; change Reolink camera entries to `"brand": "reolink"`. Keep both camera streams set to H.264 for broad browser support.
+Set `CAMERA_USERNAME` and `CAMERA_PASSWORD`. Review `cameras.json`: Entrance (`10.168.20.29`) and Exit (`10.168.20.27`) are configured as Reolink. If you use `cameras.local.json`, check the brands in that private copy too. Keep both camera streams set to H.264 for broad browser support.
 
 Once connected to the camera subnet:
 
