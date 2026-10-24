@@ -1,0 +1,20 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+cameras.local.json
+
+# Generated media, inventories, binaries, and runtime state
+snapshots/
+*.jpg
+*.jpeg
+*.png
+*.csv
+camera-dashboard/bin/
+camera-dashboard/.runtime/
+node_modules/
+*.log
+.DS_Store
+__pycache__/
