@@ -6,9 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { validateCameras, streamConfig, streamName } from './config.mjs';
+import { streamerPlatform, streamerLaunch } from './platform.mjs';
+import { startTestVideo } from './sample-video.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const demo = process.argv.includes('--demo');
+const testVideo = process.argv.includes('--test-video');
+if (demo && testVideo) throw new Error('Choose either --demo or --test-video.');
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 8088);
 const upstreamPort = Number(process.env.GO2RTC_PORT || 1984);
@@ -20,7 +24,10 @@ const password = process.env.DASHBOARD_PASSWORD || '';
 if (!['127.0.0.1', 'localhost', '::1'].includes(host) && !password) {
   throw new Error('Set DASHBOARD_PASSWORD before listening on the LAN.');
 }
-const cameras = validateCameras(JSON.parse(await readFile(resolve(root, process.env.CAMERAS_FILE || 'cameras.json'), 'utf8')));
+const cameras = testVideo
+  ? Array.from({ length: 4 }, (_, index) => ({ id: `test_${index + 1}`, room: `T${index + 1}`,
+    name: `Test pattern ${index + 1}`, ip: '127.0.0.1', brand: 'amcrest', port: 554 }))
+  : validateCameras(JSON.parse(await readFile(resolve(root, process.env.CAMERAS_FILE || 'cameras.json'), 'utf8')));
 const cookie = randomBytes(32).toString('hex');
 const expected = Buffer.from(`Basic ${Buffer.from(`operator:${password}`).toString('base64')}`);
 function authorized(req) {
@@ -41,6 +48,7 @@ let streamer;
 let runtime;
 let stopping = false;
 let streamerReady = false;
+let testSources;
 const tunnels = new Set();
 
 const assets = new Map([
@@ -64,7 +72,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/api/cameras') {
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({
-      demo, cameras, transport: 'MSE', streamerReady,
+      demo, testVideo, cameras, transport: 'MSE', streamerReady,
     }));
     return;
   }
@@ -132,23 +140,26 @@ async function stop(code = 0) {
   for (const socket of tunnels) socket.destroy();
   server.close();
   server.closeAllConnections();
-  if (streamer && streamer.exitCode === null) {
+  if (streamer && streamer.exitCode === null && streamer.signalCode === null) {
     streamer.kill('SIGTERM');
     await Promise.race([new Promise(done => streamer.once('exit', done)), new Promise(done => setTimeout(done, 2000))]);
-    if (streamer.exitCode === null) streamer.kill('SIGKILL');
+    if (streamer.exitCode === null && streamer.signalCode === null) streamer.kill('SIGKILL');
   }
-  if (runtime) await rm(runtime, { recursive: true, force: true });
+  testSources?.close();
+  if (runtime) await rm(runtime, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   process.exit(code);
 }
 process.on('SIGINT', () => stop());
 process.on('SIGTERM', () => stop());
+// IPC lets automated tests stop parent and child cleanly on Windows, too.
+process.on('message', message => { if (message === 'shutdown') stop(); });
 
 try {
   if (!demo) {
     const username = process.env.CAMERA_USERNAME || process.env.AMCREST_USERNAME || 'admin';
     const cameraPassword = process.env.CAMERA_PASSWORD || process.env.AMCREST_PASSWORD;
-    if (!cameraPassword) throw new Error('Set CAMERA_PASSWORD in .env, or use npm run demo for a camera-free preview.');
-    const binary = process.env.GO2RTC_BIN || join(root, 'bin/go2rtc');
+    if (!testVideo && !cameraPassword) throw new Error('Set CAMERA_PASSWORD in .env, or use npm run demo for a camera-free preview.');
+    const binary = process.env.GO2RTC_BIN || join(root, 'bin', streamerPlatform().executable);
     await access(binary, constants.X_OK).catch(() => { throw new Error('Install go2rtc with npm run install:streamer first.'); });
     // Check the port before launching; never attach to someone else's go2rtc.
     const probe = http.createServer();
@@ -158,8 +169,16 @@ try {
     await mkdir(join(root, '.runtime'), { recursive: true, mode: 0o700 });
     runtime = await mkdtemp(join(root, '.runtime/session-'));
     const configPath = join(runtime, 'go2rtc.yaml');
-    await writeFile(configPath, JSON.stringify(streamConfig(cameras, username, cameraPassword, upstreamPort)), { mode: 0o600 });
-    streamer = spawn(binary, ['-config', configPath], { stdio: 'ignore' });
+    const config = streamConfig(cameras, username, cameraPassword || '', upstreamPort);
+    if (testVideo) {
+      testSources = await startTestVideo(root);
+      for (const camera of cameras) {
+        for (const quality of ['sub', 'main']) config.streams[`${camera.id}_${quality}`] = [testSources.urls[quality]];
+      }
+    }
+    await writeFile(configPath, JSON.stringify(config), { mode: 0o600 });
+    const launch = streamerLaunch(binary, configPath);
+    streamer = spawn(launch.command, launch.args, { stdio: 'ignore', windowsHide: true });
     streamer.on('error', () => { console.error('Unable to launch go2rtc.'); stop(1); });
     streamer.on('exit', () => { if (!stopping) { console.error('go2rtc stopped unexpectedly. Check the binary and port configuration.'); stop(1); } });
     for (let attempt = 0; attempt < 50 && !streamerReady; attempt++) {
@@ -172,7 +191,7 @@ try {
     if (!streamerReady) throw new Error('go2rtc did not become ready.');
   }
   await new Promise((done, reject) => { server.once('error', reject); server.listen(port, host, done); });
-  console.log(`Haunt Camera Wall ${demo ? '(preview mode)' : '(live)'}: http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
+  console.log(`Haunt Camera Wall ${demo ? '(preview mode)' : testVideo ? '(synthetic test video)' : '(live)'}: http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
   console.log(`${cameras.length} cameras configured. Press Ctrl+C to stop.`);
 } catch (error) {
   console.error(`Startup failed: ${error.message}`);
