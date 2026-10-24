@@ -1,4 +1,4 @@
-import { restoreOrder, moveCamera, pageSize, cameraPage } from './order.js';
+import { restoreOrder, moveCamera, pageSize, cameraPage, restoreGroups, validateGroup } from './order.js';
 
 const $ = selector => document.querySelector(selector);
 const state = { cameras: [], demo: true, testVideo: false, page: 0, size: 6, query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
@@ -8,6 +8,114 @@ let VideoClass;
 let defaultCameras = [];
 let draggedId = null;
 let orderKey = 'haunt-camera-order';
+let groupsKey = 'haunt-pages-v1';
+let savedGroups = [];
+let activeGroup = '';
+let editingGroup = null;
+let selectedCameras = new Set();
+
+function currentGroup() { return savedGroups.find(group => group.id === activeGroup); }
+function wallCameras() {
+  const group = currentGroup();
+  return group ? group.cameras.map(id => state.cameras.find(camera => camera.id === id)).filter(Boolean) : state.cameras;
+}
+function persistGroups(message) {
+  try {
+    localStorage.setItem(groupsKey, JSON.stringify(savedGroups));
+    localStorage.setItem(`${groupsKey}-active`, activeGroup);
+    $('#order-status').textContent = `${message} Saved in this browser.`;
+  } catch { $('#order-status').textContent = `${message} Browser storage is unavailable; changes last until you reload.`; }
+}
+function groupControls() {
+  const automatic = new Option('All cameras · automatic pages', '');
+  $('#group-select').replaceChildren(automatic, ...savedGroups.map(group => new Option(`${group.name} (${group.cameras.length}/6)`, group.id)));
+  $('#group-select').value = activeGroup;
+  $('#edit-group').disabled = !currentGroup();
+  $('#layout').disabled = Boolean(currentGroup());
+  $('#layout').closest('label').hidden = Boolean(currentGroup());
+  $('#layout').title = currentGroup() ? 'Custom pages show their assigned cameras, up to six. Use Edit page to change them.' : '';
+  $('#reset-order').textContent = currentGroup() ? 'Reset page order' : 'Reset room order';
+}
+function selectGroup(id) {
+  activeGroup = savedGroups.some(group => group.id === id) ? id : '';
+  state.page = 0;
+  state.query = '';
+  state.filter = 'all';
+  $('#search').value = '';
+  document.querySelectorAll('[data-filter]').forEach(button => button.classList.toggle('selected', button.dataset.filter === 'all'));
+  groupControls();
+  persistGroups(currentGroup() ? `Viewing ${currentGroup().name}.` : 'Viewing automatic pages.');
+  renderGrid();
+}
+function selectionCount() {
+  $('#group-count').textContent = `${selectedCameras.size} / 6 cameras selected`;
+  $('#group-picker').querySelectorAll('input').forEach(input => {
+    input.disabled = selectedCameras.size >= 6 && !input.checked;
+  });
+}
+function renderPicker() {
+  const query = $('#group-search').value.toLowerCase().trim();
+  const cameras = defaultCameras.filter(camera => `${camera.room} ${camera.name} ${camera.ip}`.toLowerCase().includes(query));
+  $('#group-picker').replaceChildren(...cameras.map(camera => {
+    const label = document.createElement('label');
+    label.className = 'camera-choice';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = camera.id;
+    input.checked = selectedCameras.has(camera.id);
+    const text = document.createElement('span');
+    text.textContent = `${camera.room} / ${camera.name} · ${camera.ip}`;
+    label.append(input, text);
+    input.addEventListener('change', () => {
+      if (input.checked && selectedCameras.size < 6) selectedCameras.add(camera.id);
+      else { selectedCameras.delete(camera.id); input.checked = false; }
+      $('#group-error').textContent = '';
+      selectionCount();
+    });
+    return label;
+  }));
+  $('#group-no-results').hidden = cameras.length > 0;
+  selectionCount();
+}
+function openGroupEditor(group = null) {
+  editingGroup = group?.id || null;
+  selectedCameras = new Set(group?.cameras || []);
+  $('#group-title').textContent = group ? 'Edit camera page' : 'Create camera page';
+  $('#group-name').value = group?.name || '';
+  $('#group-search').value = '';
+  $('#group-error').textContent = '';
+  $('#delete-group').hidden = !group;
+  $('#delete-confirm').hidden = true;
+  renderPicker();
+  $('#group-dialog').showModal();
+  $('#group-name').focus();
+}
+$('#new-group').addEventListener('click', () => openGroupEditor());
+$('#edit-group').addEventListener('click', () => openGroupEditor(currentGroup()));
+$('#close-group').addEventListener('click', () => $('#group-dialog').close());
+$('#cancel-group').addEventListener('click', () => $('#group-dialog').close());
+$('#group-search').addEventListener('input', renderPicker);
+$('#group-select').addEventListener('change', event => selectGroup(event.target.value));
+$('#group-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const name = $('#group-name').value.trim();
+  const cameras = [...selectedCameras];
+  const error = validateGroup(name, cameras, savedGroups, editingGroup);
+  if (error) { $('#group-error').textContent = error; return; }
+  // Page IDs are local identifiers, not credentials; this also works on HTTP LAN URLs.
+  const group = { id: editingGroup || `page-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`, name, cameras };
+  const index = savedGroups.findIndex(item => item.id === editingGroup);
+  if (index < 0) savedGroups.push(group); else savedGroups[index] = group;
+  $('#group-dialog').close();
+  selectGroup(group.id);
+});
+$('#delete-group').addEventListener('click', () => { $('#delete-confirm').hidden = false; });
+$('#keep-group').addEventListener('click', () => { $('#delete-confirm').hidden = true; });
+$('#confirm-delete-group').addEventListener('click', () => {
+  savedGroups = savedGroups.filter(group => group.id !== editingGroup);
+  $('#group-dialog').close();
+  selectGroup('');
+});
 
 function clearDrag() {
   draggedId = null;
@@ -23,20 +131,25 @@ function saveOrder(message) {
 }
 function reorder(sourceId, targetId) {
   if (sourceId === targetId) return;
-  state.cameras = moveCamera(state.cameras, sourceId, targetId);
+  const group = currentGroup();
+  if (group) group.cameras = moveCamera(wallCameras(), sourceId, targetId).map(camera => camera.id);
+  else state.cameras = moveCamera(state.cameras, sourceId, targetId);
   // CSS order preserves the existing video elements and their connections.
-  state.cameras.forEach((camera, index) => {
+  wallCameras().forEach((camera, index) => {
     const card = document.getElementById(`tile-${camera.id}`);
     if (card) card.style.order = index;
   });
   const camera = state.cameras.find(item => item.id === sourceId);
-  saveOrder(`Moved ${camera.room} / ${camera.name}.`);
+  if (group) persistGroups(`Moved ${camera.room} / ${camera.name} on ${group.name}.`);
+  else saveOrder(`Moved ${camera.room} / ${camera.name}.`);
 }
 $('#reset-order').addEventListener('click', () => {
   clearDrag();
-  state.cameras = [...defaultCameras];
+  if (currentGroup()) {
+    currentGroup().cameras.sort((a, b) => defaultCameras.findIndex(camera => camera.id === a) - defaultCameras.findIndex(camera => camera.id === b));
+    persistGroups('Page order restored.');
+  } else { state.cameras = [...defaultCameras]; saveOrder('Room order restored.'); }
   state.page = 0;
-  saveOrder('Room order restored.');
   renderGrid();
 });
 document.addEventListener('dragend', clearDrag);
@@ -170,14 +283,17 @@ function stopGrid() {
 }
 function filtered() {
   const query = state.query.toLowerCase().trim();
-  return state.cameras.filter(camera =>
+  return wallCameras().filter(camera =>
     `${camera.room} ${camera.name} ${camera.ip}`.toLowerCase().includes(query) &&
     (state.filter !== 'offline' || state.statuses.get(camera.id) === 'offline'));
 }
 function renderGrid() {
   stopGrid();
+  $('#all-badge').textContent = wallCameras().length;
   const matches = filtered();
-  const { size: count, pages, page, visible } = cameraPage(matches, state.page, state.size);
+  const group = currentGroup();
+  const { size: count, pages: autoPages, page, visible } = cameraPage(matches, state.page, group ? 6 : state.size);
+  const pages = group ? savedGroups.length : autoPages;
   state.page = page;
   $('#grid').replaceChildren();
   const columns = visible.length <= 3 ? Math.max(1, visible.length) : visible.length === 4 ? 2 : 3;
@@ -188,7 +304,7 @@ function renderGrid() {
     const card = document.createElement('article');
     card.className = 'camera-card';
     card.id = `tile-${camera.id}`;
-    card.style.order = state.cameras.indexOf(camera);
+    card.style.order = wallCameras().findIndex(item => item.id === camera.id);
     card.innerHTML = '<div class="camera-top"><button class="drag-handle" draggable="true" type="button">⠿</button><div class="camera-title"><span class="room-tag"></span><span class="camera-name"></span></div><span class="camera-status"></span></div><div class="feed" role="button" tabindex="0"><span class="feed-overlay">Inspect camera ↗</span></div><div class="camera-bottom"><span class="camera-ip"></span><span class="stream-label">SD · SUBSTREAM</span></div>';
     const handle = card.querySelector('.drag-handle');
     handle.setAttribute('aria-label', `Move ${camera.room} / ${camera.name}, ${camera.ip}`);
@@ -214,7 +330,7 @@ function renderGrid() {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
       document.querySelectorAll('.drop-before,.drop-after').forEach(item => item.classList.remove('drop-before', 'drop-after'));
-      card.classList.add(state.cameras.findIndex(item => item.id === draggedId) < state.cameras.indexOf(camera) ? 'drop-after' : 'drop-before');
+      card.classList.add(wallCameras().findIndex(item => item.id === draggedId) < wallCameras().findIndex(item => item.id === camera.id) ? 'drop-after' : 'drop-before');
     });
     card.addEventListener('dragleave', event => {
       if (!card.contains(event.relatedTarget)) card.classList.remove('drop-before', 'drop-after');
@@ -241,18 +357,19 @@ function renderGrid() {
     feed.append(overlay);
   }
   $('#empty').hidden = visible.length > 0;
-  $('#page-label').textContent = matches.length ? `Showing ${state.page * count + 1}–${state.page * count + visible.length} of ${matches.length} cameras` : '0 cameras match your filters';
-  $('#page-count').textContent = `${state.page + 1} / ${pages}`;
+  $('#page-label').textContent = group ? `${group.name} · ${visible.length} of ${group.cameras.length} assigned cameras` : matches.length ? `Showing ${state.page * count + 1}–${state.page * count + visible.length} of ${matches.length} cameras` : '0 cameras match your filters';
+  const pageIndex = group ? savedGroups.indexOf(group) : state.page;
+  $('#page-count').textContent = `${pageIndex + 1} / ${pages}`;
   $('#page-select').replaceChildren(...Array.from({ length: pages }, (_, index) => {
     const option = document.createElement('option');
     option.value = index;
-    option.textContent = `Page ${index + 1} of ${pages}`;
+    option.textContent = group ? savedGroups[index].name : `Page ${index + 1} of ${pages}`;
     return option;
   }));
-  $('#page-select').value = state.page;
-  $('#page-select').disabled = !matches.length;
-  $('#previous').disabled = state.page === 0;
-  $('#next').disabled = state.page >= pages - 1;
+  $('#page-select').value = pageIndex;
+  $('#page-select').disabled = group ? false : !matches.length;
+  $('#previous').disabled = pageIndex === 0;
+  $('#next').disabled = pageIndex >= pages - 1;
   updateCounts();
 }
 let focused;
@@ -267,7 +384,7 @@ function openFocus(camera) {
   focused = camera;
   $('#focus-title').textContent = `${camera.room} / ${camera.name}`;
   $('#focus-ip').textContent = state.testVideo ? 'Generated H.264 test pattern · no camera connection' : `${camera.ip} · ${camera.brand === 'amcrest' ? 'Amcrest' : 'Reolink'}`;
-  $('#quality').value = 'main';
+  $('#quality').value = 'sub';
   $('#focus-dialog').showModal();
   refreshFocus();
 }
@@ -299,9 +416,13 @@ $('#layout').addEventListener('change', event => {
   try { localStorage.setItem('haunt-grid', state.size); } catch { /* Optional preference. */ }
   renderGrid();
 });
-$('#previous').addEventListener('click', () => { state.page--; renderGrid(); });
-$('#next').addEventListener('click', () => { state.page++; renderGrid(); });
-$('#page-select').addEventListener('change', event => { state.page = Number(event.target.value); renderGrid(); });
+function navigatePage(index) {
+  if (currentGroup()) selectGroup(savedGroups[index].id);
+  else { state.page = index; renderGrid(); }
+}
+$('#previous').addEventListener('click', () => navigatePage(currentGroup() ? savedGroups.indexOf(currentGroup()) - 1 : state.page - 1));
+$('#next').addEventListener('click', () => navigatePage(currentGroup() ? savedGroups.indexOf(currentGroup()) + 1 : state.page + 1));
+$('#page-select').addEventListener('change', event => navigatePage(Number(event.target.value)));
 $('#reconnect').addEventListener('click', () => { renderGrid(); refreshFocus(); });
 $('#pause').addEventListener('click', () => {
   state.paused = !state.paused;
@@ -338,6 +459,14 @@ try {
   catch { /* Ignore malformed or unavailable optional browser preferences. */ }
   state.demo = data.demo;
   state.testVideo = data.testVideo;
+  groupsKey = data.testVideo ? 'haunt-test-pages-v1' : 'haunt-pages-v1';
+  try {
+    savedGroups = restoreGroups(JSON.parse(localStorage.getItem(groupsKey)), state.cameras);
+    const selected = localStorage.getItem(`${groupsKey}-active`);
+    if (savedGroups.some(group => group.id === selected)) activeGroup = selected;
+  } catch { /* Optional browser preferences. */ }
+  groupControls();
+  if (currentGroup()) $('#order-status').textContent = `${currentGroup().name}: use Edit page to change its cameras. Drag handles to rearrange this page.`;
   for (const id of ['#total-count', '#nav-count', '#all-badge', '#directory-count']) $(id).textContent = state.cameras.length;
   const groups = new Map();
   for (const camera of defaultCameras) {
