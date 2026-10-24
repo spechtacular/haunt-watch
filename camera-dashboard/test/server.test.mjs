@@ -57,6 +57,7 @@ test('live HTTP and WebSocket proxy expose only configured streams and no creden
     assert.ok(!text.includes('test-password-never-expose'));
     assert.ok(!text.includes('rtsp://'));
     assert.equal((await fetch(app.url)).status, 200);
+    assert.match(await (await fetch(app.url + '/order.js')).text(), /export function restoreOrder/);
     assert.match(await (await fetch(app.url + '/stream/video-rtc.js')).text(), /fake player/);
     assert.equal((await fetch(app.url + '/.env')).status, 404);
     assert.equal((await fetch(app.url + '/api/streams')).status, 404);
