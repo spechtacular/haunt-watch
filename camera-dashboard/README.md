@@ -4,6 +4,21 @@ A local browser dashboard for macOS, Linux, and Windows 11. Uses Node.js and go2
 
 The wall starts with muted substreams, supports 4/9/16/all-camera layouts, room/IP search, paging, pause/resume, reconnect, and fullscreen. Click a tile for the main-stream inspector; switch between SD and HD there. Offline feeds retry automatically. It pauses connections when the browser tab is hidden.
 
+## Install from GitHub
+
+Follow the [complete installation and operating guide](../README.md) for GitHub ZIP/clone installation, private camera settings, standalone modes, live mode, LAN viewing, and updates on Windows, macOS, and Linux.
+
+For a ZIP installation, sign in to [the repository](https://github.com/spechtacular/haunt-watch), choose **Code → Download ZIP**, and extract it completely. Open a terminal in the extracted `haunt-watch-main/camera-dashboard` folder. For Git:
+
+```bash
+git clone https://github.com/spechtacular/haunt-watch.git
+cd haunt-watch/camera-dashboard
+```
+
+Install [Node.js LTS](https://nodejs.org/) (22.9 or newer, with npm) first. No `npm install` is needed. All remaining commands run inside `camera-dashboard`; do not run another `cd camera-dashboard` if you are already there. In Windows PowerShell, use `npm.cmd` instead of `npm`.
+
+Start the app in the terminal, keep that terminal running, and browse to **http://127.0.0.1:8088**. Opening `public/index.html` directly as a `file://` page does not run the server. Stop with **Ctrl+C** before switching modes.
+
 ## Arrange the camera wall
 
 Drag the ⠿ handle in a camera's header onto another tile to move it. The feeds keep playing while you rearrange them. To move cameras between pages, choose **All** first. You can also focus a handle with Tab and use the arrow keys to move that camera before or after another visible camera.
@@ -16,16 +31,15 @@ The order is saved in the current browser for this dashboard address and survive
 - For live video: the server computer can reach the cameras on the LAN, with RTSP enabled (normally port 554).
 - A current Safari, Chrome, Firefox, or Edge browser with MediaSource/ManagedMediaSource support. Use **H.264** for both camera streams for broad browser compatibility. H.265 availability depends on the browser and hardware; this app does not transcode.
 
-## Preview without cameras
+## Standalone mode: preview without cameras
 
 ```bash
-cd camera-dashboard
 npm run demo
 ```
 
 Open **http://127.0.0.1:8088**. Preview tiles are labeled placeholders; no video, credentials, or camera connections are simulated. No go2rtc download is needed for preview.
 
-## Test moving video at home, without cameras
+## Standalone mode: moving video without cameras
 
 Install the streamer once, then run the synthetic video wall:
 
@@ -41,14 +55,13 @@ See [Windows 11 home testing](WINDOWS.md) for complete PowerShell instructions.
 ## Set up live video (all three operating systems)
 
 ```bash
-cd camera-dashboard
 npm run install:streamer
 cp .env.example .env
 ```
 
 The installer downloads the pinned official go2rtc **v1.9.14** binary for the current platform: macOS Intel/Apple Silicon, Linux AMD64/ARM64, or Windows x64/ARM64. macOS extraction uses built-in `unzip`; Windows uses PowerShell `Expand-Archive` and installs `bin/go2rtc.exe`. No administrator privileges are needed. You can also download go2rtc yourself and set `GO2RTC_BIN` to its absolute path.
 
-Edit `.env` and set your shared camera credentials:
+Create `.env` only on initial setup; copying the example again overwrites existing settings. Edit `.env` and set your shared camera credentials:
 
 ```dotenv
 CAMERA_USERNAME=admin
@@ -73,6 +86,8 @@ Open **http://127.0.0.1:8088**. Stop with **Ctrl+C**. The app starts and stops i
 
 Edit `cameras.json`, or copy it to ignored `cameras.local.json` and set `CAMERAS_FILE=cameras.local.json` in `.env`. Restart the app after changes.
 
+To create the private copy, use `cp cameras.json cameras.local.json` on macOS/Linux, or `Copy-Item cameras.json cameras.local.json` in Windows PowerShell. The file is a JSON array of camera objects. Use valid JSON with double-quoted keys/strings and no comments or trailing commas.
+
 ```json
 {
   "id": "camera_29",
@@ -93,6 +108,8 @@ Edit `cameras.json`, or copy it to ignored `cameras.local.json` and set `CAMERAS
 - Reolink: `/h264Preview_01_sub` for SD and `/h264Preview_01_main` for HD. Model support varies.
 
 The app encodes special characters in RTSP credentials. Each camera currently shares the same username and password. No microphone, recording, or cloud-upload features are enabled in the dashboard.
+
+`npm start` / `npm.cmd start` loads `.env`; existing exported environment variables take precedence. The standalone `demo` and `test:video` commands do not automatically load `.env`. Live mode needs camera-network access and RTSP enabled on each camera, normally port 554; the HTTP port 80 used for an Amcrest web login is separate. Set both camera streams to H.264.
 
 ## View from another computer on the LAN
 
