@@ -1,9 +1,47 @@
+import { restoreOrder, moveCamera } from './order.js';
+
 const $ = selector => document.querySelector(selector);
 const state = { cameras: [], demo: true, testVideo: false, page: 0, size: '9', query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
 try { state.size = localStorage.getItem('haunt-grid') || '9'; } catch { /* Storage can be unavailable in private windows. */ }
 if (!['4', '9', '16', 'all'].includes(state.size)) state.size = '9';
 $('#layout').value = state.size;
 let VideoClass;
+let defaultCameras = [];
+let draggedId = null;
+let orderKey = 'haunt-camera-order';
+
+function clearDrag() {
+  draggedId = null;
+  document.querySelectorAll('.camera-card').forEach(card => card.classList.remove('dragging', 'drop-before', 'drop-after'));
+}
+function saveOrder(message) {
+  try {
+    localStorage.setItem(orderKey, JSON.stringify(state.cameras.map(camera => camera.id)));
+    $('#order-status').textContent = `${message} Saved in this browser.`;
+  } catch {
+    $('#order-status').textContent = `${message} Browser storage is unavailable; this order lasts until you reload.`;
+  }
+}
+function reorder(sourceId, targetId) {
+  if (sourceId === targetId) return;
+  state.cameras = moveCamera(state.cameras, sourceId, targetId);
+  // CSS order preserves the existing video elements and their connections.
+  state.cameras.forEach((camera, index) => {
+    const card = document.getElementById(`tile-${camera.id}`);
+    if (card) card.style.order = index;
+  });
+  const camera = state.cameras.find(item => item.id === sourceId);
+  saveOrder(`Moved ${camera.room} / ${camera.name}.`);
+}
+$('#reset-order').addEventListener('click', () => {
+  clearDrag();
+  state.cameras = [...defaultCameras];
+  state.page = 0;
+  saveOrder('Room order restored.');
+  renderGrid();
+});
+document.addEventListener('dragend', clearDrag);
+document.addEventListener('drop', clearDrag);
 
 function notice(message, error = false) {
   $('#notice').hidden = false;
@@ -150,7 +188,43 @@ function renderGrid() {
     const card = document.createElement('article');
     card.className = 'camera-card';
     card.id = `tile-${camera.id}`;
-    card.innerHTML = '<div class="camera-top"><div class="camera-title"><span class="room-tag"></span><span class="camera-name"></span></div><span class="camera-status"></span></div><div class="feed" role="button" tabindex="0"><span class="feed-overlay">Inspect camera ↗</span></div><div class="camera-bottom"><span class="camera-ip"></span><span class="stream-label">SD · SUBSTREAM</span></div>';
+    card.style.order = state.cameras.indexOf(camera);
+    card.innerHTML = '<div class="camera-top"><button class="drag-handle" draggable="true" type="button">⠿</button><div class="camera-title"><span class="room-tag"></span><span class="camera-name"></span></div><span class="camera-status"></span></div><div class="feed" role="button" tabindex="0"><span class="feed-overlay">Inspect camera ↗</span></div><div class="camera-bottom"><span class="camera-ip"></span><span class="stream-label">SD · SUBSTREAM</span></div>';
+    const handle = card.querySelector('.drag-handle');
+    handle.setAttribute('aria-label', `Move ${camera.room} / ${camera.name}, ${camera.ip}`);
+    handle.title = 'Drag to rearrange. Arrow keys move this camera before or after another visible camera.';
+    handle.addEventListener('dragstart', event => {
+      draggedId = camera.id;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', camera.id);
+      card.classList.add('dragging');
+      $('#order-status').textContent = `Drop ${camera.room} / ${camera.name} onto another camera to move it.`;
+    });
+    handle.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      const ordered = filtered().filter(item => document.getElementById(`tile-${item.id}`));
+      const index = ordered.findIndex(item => item.id === camera.id);
+      const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1;
+      const target = ordered[index + direction];
+      if (target) reorder(camera.id, target.id);
+    });
+    card.addEventListener('dragover', event => {
+      if (!draggedId || draggedId === camera.id) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.drop-before,.drop-after').forEach(item => item.classList.remove('drop-before', 'drop-after'));
+      card.classList.add(state.cameras.findIndex(item => item.id === draggedId) < state.cameras.indexOf(camera) ? 'drop-after' : 'drop-before');
+    });
+    card.addEventListener('dragleave', event => {
+      if (!card.contains(event.relatedTarget)) card.classList.remove('drop-before', 'drop-after');
+    });
+    card.addEventListener('drop', event => {
+      if (!draggedId) return;
+      event.preventDefault();
+      reorder(draggedId, camera.id);
+      clearDrag();
+    });
     card.querySelector('.room-tag').textContent = camera.room;
     card.querySelector('.camera-name').textContent = camera.name;
     card.querySelector('.camera-ip').textContent = camera.ip;
@@ -247,12 +321,17 @@ try {
   const response = await fetch('/api/cameras');
   if (!response.ok) throw new Error('Camera configuration request failed.');
   const data = await response.json();
-  state.cameras = data.cameras;
+  defaultCameras = [...data.cameras];
+  state.cameras = [...defaultCameras];
+  // Keep the generated home-test layout separate from the real camera wall.
+  orderKey = data.testVideo ? 'haunt-test-camera-order' : 'haunt-camera-order';
+  try { state.cameras = restoreOrder(defaultCameras, JSON.parse(localStorage.getItem(orderKey))); }
+  catch { /* Ignore malformed or unavailable optional browser preferences. */ }
   state.demo = data.demo;
   state.testVideo = data.testVideo;
   for (const id of ['#total-count', '#nav-count', '#all-badge', '#directory-count']) $(id).textContent = state.cameras.length;
   const groups = new Map();
-  for (const camera of state.cameras) {
+  for (const camera of defaultCameras) {
     const key = `${camera.room} / ${camera.name}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(camera);
