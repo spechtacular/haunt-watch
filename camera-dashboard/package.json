@@ -1,0 +1,13 @@
+{
+  "name": "haunt-camera-wall",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.9" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "demo": "node server.mjs --demo",
+    "install:streamer": "node install-streamer.mjs",
+    "test": "node --test"
+  }
+}
