@@ -178,9 +178,15 @@ Restart the app. On another device, open `http://SERVER_LAN_IP:8088`, replacing 
 
 Allow inbound TCP **8088** through that computer's firewall if needed. On Windows, allow it on the **private network** profile. Viewing on the server computer itself with `HOST=127.0.0.1` does not require LAN sharing. This HTTP setup is for a trusted LAN; use a VPN or HTTPS reverse proxy for access over untrusted networks. Do not expose it directly to the internet.
 
+## Camera pages and sizing
+
+Choose **1–6 cameras per page** in the toolbar. The default is six, and the selection is saved in your browser. Use the **Page** selector to jump directly to a page or the arrow buttons to move backward/forward. Pages follow your saved camera order and the current search/filter.
+
+Tiles resize to fit the cameras actually on the page: a final page with only three cameras uses one row of three on desktop, even if the page size is six. Desktop pages use the available window height; **Full screen** gives the camera views more space. Video keeps its proportions. Narrow screens use fewer columns.
+
 ## Arrange your camera wall
 
-Drag a camera's **⠿ handle** onto another tile. Choose **All** to move cameras between pages. Video keeps playing during the move. You can also focus a handle with Tab and use the arrow keys.
+Drag a camera's **⠿ handle** onto another tile. Choose **1–6 cameras per page**; browse with the page selector or arrow buttons. Dragging rearranges cameras on the current page. Video keeps playing during the move. You can also focus a handle with Tab and use the arrow keys.
 
 The layout saves automatically in the current browser for that dashboard address; it does not sync between computers or browsers. **Reset room order** restores the original room/name order. Standalone test-video order is stored separately from the real camera wall.
 
@@ -194,7 +200,7 @@ The layout saves automatically in the current browser for that dashboard address
 | Port already in use | Stop the other app instance with Ctrl+C. In live mode you can change `PORT` or `GO2RTC_PORT` in `.env`; use the new dashboard port in the browser. |
 | Camera offline | Check subnet access, IP, brand, shared credentials, RTSP, and H.264. Port 80 being open does not establish RTSP access. |
 | SD works but HD fails | Check that the camera's main stream is also H.264. The app does not transcode H.265. |
-| Video slows with many feeds | Select 4 or 9 cameras per page. `All` opens every feed and uses more bandwidth and decoding capacity. |
+| Video slows with many feeds | Choose fewer cameras per page (1–6) to reduce bandwidth and decoding load. |
 | Changes to settings do not appear | Stop and restart live mode. Refresh the browser after updating application files. |
 
 See the [dashboard reference](camera-dashboard/README.md) for stream URLs, runtime files, and additional details.
