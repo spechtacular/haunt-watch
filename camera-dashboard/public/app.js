@@ -1,5 +1,5 @@
 const $ = selector => document.querySelector(selector);
-const state = { cameras: [], demo: true, page: 0, size: '9', query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
+const state = { cameras: [], demo: true, testVideo: false, page: 0, size: '9', query: '', filter: 'all', paused: false, statuses: new Map(), players: new Set(), focusPlayer: null };
 try { state.size = localStorage.getItem('haunt-grid') || '9'; } catch { /* Storage can be unavailable in private windows. */ }
 if (!['4', '9', '16', 'all'].includes(state.size)) state.size = '9';
 $('#layout').value = state.size;
@@ -23,7 +23,7 @@ function status(camera, value, message = '') {
     card.dataset.status = value;
     const badge = card.querySelector('.camera-status');
     badge.className = `camera-status ${value}`;
-    badge.textContent = { preview: 'PREVIEW', connecting: 'CONNECTING', live: 'LIVE', offline: 'OFFLINE', paused: 'PAUSED' }[value];
+    badge.textContent = value === 'live' && state.testVideo ? 'TEST VIDEO' : { preview: 'PREVIEW', connecting: 'CONNECTING', live: 'LIVE', offline: 'OFFLINE', paused: 'PAUSED' }[value];
     badge.title = message;
   }
   updateCounts();
@@ -34,7 +34,7 @@ function updateCounts() {
   $('#live-count').textContent = live;
   $('#offline-count').textContent = offline;
   $('#attention-badge').textContent = offline;
-  $('#live-description').textContent = state.demo ? 'Preview · no live connections' : state.paused ? 'Video paused' : 'Visible feeds only';
+  $('#live-description').textContent = state.paused ? 'Video paused' : state.demo ? 'Preview · no live connections' : state.testVideo ? 'Synthetic video only' : 'Visible feeds only';
 }
 function placeholder(camera, label = 'Preview · no camera connection') {
   const element = document.createElement('div');
@@ -178,13 +178,13 @@ function refreshFocus() {
   if (!focused) return;
   state.focusPlayer?.stop();
   state.focusPlayer = attachFeed($('#focus-feed'), focused, $('#quality').value, (value, detail) => {
-    $('#focus-status').textContent = detail || { preview: 'Preview mode · no camera connection', paused: 'Video paused', live: 'Live video', connecting: 'Connecting…', offline: 'Offline · retrying' }[value];
+    $('#focus-status').textContent = detail || (value === 'live' && state.testVideo ? 'Synthetic test video · no camera connection' : { preview: 'Preview mode · no camera connection', paused: 'Video paused', live: 'Live video', connecting: 'Connecting…', offline: 'Offline · retrying' }[value]);
   });
 }
 function openFocus(camera) {
   focused = camera;
   $('#focus-title').textContent = `${camera.room} / ${camera.name}`;
-  $('#focus-ip').textContent = `${camera.ip} · ${camera.brand === 'amcrest' ? 'Amcrest' : 'Reolink'}`;
+  $('#focus-ip').textContent = state.testVideo ? 'Generated H.264 test pattern · no camera connection' : `${camera.ip} · ${camera.brand === 'amcrest' ? 'Amcrest' : 'Reolink'}`;
   $('#quality').value = 'main';
   $('#focus-dialog').showModal();
   refreshFocus();
@@ -249,6 +249,7 @@ try {
   const data = await response.json();
   state.cameras = data.cameras;
   state.demo = data.demo;
+  state.testVideo = data.testVideo;
   for (const id of ['#total-count', '#nav-count', '#all-badge', '#directory-count']) $(id).textContent = state.cameras.length;
   const groups = new Map();
   for (const camera of state.cameras) {
@@ -270,6 +271,7 @@ try {
   }
   if (state.demo) notice('PREVIEW MODE — Room labels and layouts are ready. These are placeholders, not live camera feeds. Start the app with camera credentials to connect.');
   else {
+    if (state.testVideo) notice('TEST VIDEO MODE — Generated moving video runs through go2rtc and the dashboard player. No cameras or camera credentials are used. SD is 320 × 180; HD is 640 × 360.');
     try { await setupPlayer(); }
     catch { notice('The streaming player could not load. Restart the server and check that go2rtc is running.', true); }
   }
