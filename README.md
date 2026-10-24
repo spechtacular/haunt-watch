@@ -82,7 +82,7 @@ The installer downloads the pinned official [go2rtc](https://github.com/AlexxIT/
 Open **http://127.0.0.1:8088**. The banner says **TEST VIDEO MODE**. Check that:
 
 - Four generated test patterns move continuously.
-- Clicking a feed opens its HD inspector; SD and HD switching works.
+- Clicking a feed opens its inspector in SD; switching to HD and back works.
 - Pause/resume, reconnect, fullscreen, and dragging camera handles work.
 - Your camera order survives refreshing the page.
 - Video continues for several minutes. Stop with Ctrl+C, restart the command, and confirm the video returns.
@@ -162,7 +162,7 @@ npm start
 npm.cmd start
 ```
 
-Open **http://127.0.0.1:8088** in a current Edge, Chrome, Safari (macOS), or Firefox browser. The grid uses muted SD substreams. Click a feed for the HD inspector. Restart the app after editing `.env` or the camera JSON file. Press **Ctrl+C** to stop.
+Open **http://127.0.0.1:8088** in a current Edge, Chrome, Safari (macOS), or Firefox browser. The grid uses muted SD substreams. Click a feed for the inspector, which starts in SD; choose HD when needed. Restart the app after editing `.env` or the camera JSON file. Press **Ctrl+C** to stop.
 
 ### View from other computers on the same LAN
 
@@ -177,6 +177,20 @@ DASHBOARD_PASSWORD="choose a dashboard password"
 Restart the app. On another device, open `http://SERVER_LAN_IP:8088`, replacing `SERVER_LAN_IP` with the address of the computer running Haunt Watch. Sign in as **operator**, using `DASHBOARD_PASSWORD`. This is separate from the camera login.
 
 Allow inbound TCP **8088** through that computer's firewall if needed. On Windows, allow it on the **private network** profile. Viewing on the server computer itself with `HOST=127.0.0.1` does not require LAN sharing. This HTTP setup is for a trusted LAN; use a VPN or HTTPS reverse proxy for access over untrusted networks. Do not expose it directly to the internet.
+
+## Custom camera groups / pages
+
+1. Click **New page** above the wall.
+2. Enter a name, such as **Ship**, **Entrance**, or **Backstage**.
+3. Select **1–6 cameras** using the checkboxes. Search by room name or IP to find cameras; selections are kept when you change the search. Once six are selected, uncheck one before adding another.
+4. Click **Save page**. Only those assigned cameras appear, with tiles sized for their count.
+5. Choose a page from **Camera page**, or use the bottom page selector and arrows to switch between saved pages.
+
+Use **Edit page** to rename a page or change its cameras. To move a camera between groups, remove it from one page and add it to the other. A camera may also appear on multiple pages. Drag the handles to arrange cameras inside the selected page; each custom page keeps its own order. **Reset page order** sorts that page by room without changing its membership.
+
+To delete a page, choose **Edit page → Delete page → Yes, delete page**. This removes only the group, never the cameras. Choose **All cameras · automatic pages** to return to the full inventory and the 1–6 automatic page-size control.
+
+Named pages, camera selections, ordering, and the last selected group are saved in this browser for this dashboard address. They survive refreshes and application restarts, but do not sync between browsers, addresses, or computers. Clearing site data removes these preferences. The generated test-video mode has separate groups from the actual camera wall.
 
 ## Camera pages and sizing
 
