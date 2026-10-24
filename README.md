@@ -131,14 +131,14 @@ Edit `cameras.local.json`. It is a JSON array; each camera looks like this:
   "room": "00",
   "name": "Entrance",
   "ip": "10.168.20.29",
-  "brand": "amcrest",
+  "brand": "reolink",
   "enabled": true
 }
 ```
 
 - Keep each `id` unique. Use only letters, numbers, underscores, and hyphens.
 - Keep `room` as a quoted string to preserve leading zeros.
-- Set the correct IP and brand: `"amcrest"` or `"reolink"`. All supplied entries initially use Amcrest, so review the Reolink cameras.
+- Set the correct IP and brand: `"amcrest"` or `"reolink"`. The supplied Entrance (`10.168.20.29`) and Exit (`10.168.20.27`) entries use Reolink; the others use Amcrest. Check these brands in existing private copies as well.
 - Set `"enabled": false` to hide a camera. An optional `"port"` sets its RTSP port; the default is **554**.
 - Preserve valid JSON: double-quoted keys/strings, commas between camera objects, and no trailing commas or comments.
 
