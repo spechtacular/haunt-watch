@@ -29,7 +29,7 @@ const cameras = testVideo
     name: `Test pattern ${index + 1}`, ip: '127.0.0.1', brand: 'amcrest', port: 554 }))
   : validateCameras(JSON.parse(await readFile(resolve(root, process.env.CAMERAS_FILE || 'cameras.json'), 'utf8')));
 const cookie = randomBytes(32).toString('hex');
-const expected = Buffer.from(`Basic ${Buffer.from(`operator:${password}`).toString('base64')}`);
+const expected = Buffer.from(`Basic ${Buffer.from(`zack:${password}`).toString('base64')}`);
 function authorized(req) {
   if (!password) return true;
   if ((req.headers.cookie || '').split(';').some(item => item.trim() === `haunt_session=${cookie}`)) return true;
@@ -65,7 +65,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   if (!allowedHost(req)) { res.writeHead(403).end('Invalid host'); return; }
   if (!authorized(req)) {
-    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Haunt camera wall"' }).end('Sign in as operator.');
+    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Haunt camera wall"' }).end('Sign in as zack.');
     return;
   }
   if (password) res.setHeader('Set-Cookie', `haunt_session=${cookie}; HttpOnly; SameSite=Strict; Path=/`);
