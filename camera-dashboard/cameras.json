@@ -32,6 +32,14 @@
     "enabled": true
   },
   {
+    "id": "camera_19",
+    "room": "88",
+    "name": "FrontSidewalk",
+    "ip": "10.168.20.19",
+    "brand": "amcrest",
+    "enabled": true
+  },
+  {
     "id": "camera_104",
     "room": "04",
     "name": "ElevatorExit",
